@@ -206,9 +206,14 @@ class BaseBenchmark:
         return ioc_scores, highlighted_chunks_count
 
     def _scores_from_dataset_and_retrievals(self, question_metadatas, highlighted_chunks_count):
+        documents = question_metadatas['documents']
+        distances = question_metadatas['distances']
+        question_metadatas = question_metadatas['metadatas']
         iou_scores = []
         recall_scores = []
         precision_scores = []
+        corpus_question_index = 0
+        i = 0
         for (index, row), highlighted_chunk_count, metadatas in zip(self.questions_df.iterrows(), highlighted_chunks_count, question_metadatas):
             # Unpack question and references
             # question, references = question_references
@@ -263,6 +268,27 @@ class BaseBenchmark:
 
             iou_score = numerator_value / iou_denominator
             iou_scores.append(iou_score)
+
+            if corpus_id == "wikitexts":
+                # if corpus_question_index in [129, 50, 102, 92 ,90, 78, 62, 131, 54, 109, 47, 31, 43]:
+                if corpus_question_index in [50]:
+                    print("Question: ", question)
+                    print("Recall Score: ", recall_score)
+                    print("Precision Score: ", precision_score)
+                    print("IOU Score: ", iou_score)
+                    # documents_length = sum([len(x) for x in documents[i][:highlighted_chunk_count]])
+                    # print("Retrieved Text Length: ", documents_length)
+                    print("Retrieved Texts:")
+                    for j in range(highlighted_chunk_count):
+                        print(documents[i][j])
+                        print("Distance: ", distances[i][j])
+                        print("------------------------------------------------")
+                    # print("Retrieved Text Length: ", documents[i][:highlighted_chunk_count])
+                    print("Question Index: ", corpus_question_index)
+                    print("\n\n")
+                corpus_question_index += 1
+
+            i += 1
 
         return iou_scores, recall_scores, precision_scores
 
@@ -402,7 +428,7 @@ class BaseBenchmark:
         # Retrieve the documents based on sorted embeddings
         retrievals = collection.query(query_embeddings=list(sorted_embeddings), n_results=maximum_n)
 
-        iou_scores, recall_scores, precision_scores = self._scores_from_dataset_and_retrievals(retrievals['metadatas'], highlighted_chunks_count)
+        iou_scores, recall_scores, precision_scores = self._scores_from_dataset_and_retrievals(retrievals, highlighted_chunks_count)
 
 
         corpora_scores = {
