@@ -181,3 +181,7 @@ If you use this package in your research, please cite our technical report:
   url = {https://research.trychroma.com/evaluating-chunking},
 }
 ```
+
+## Contributions
+We welcome contributions and are excited you'd like to get involved! 
+Make sure your pull request goes to the dev branch. We will test it and then later merge it to main.
