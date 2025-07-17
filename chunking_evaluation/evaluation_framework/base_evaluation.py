@@ -292,7 +292,7 @@ class BaseEvaluation:
 
         docs, metas = self._get_chunks_and_metadata(chunker)
 
-        BATCH_SIZE = 100
+        BATCH_SIZE = 500
         for i in range(0, len(docs), BATCH_SIZE):
             batch_docs = docs[i:i+BATCH_SIZE]
             batch_metas = metas[i:i+BATCH_SIZE]
@@ -307,6 +307,8 @@ class BaseEvaluation:
             # print("Metadatas: ", batch_metas)
 
         return collection
+
+
     
     def _convert_question_references_to_json(self):
         def safe_json_loads(row):
@@ -356,9 +358,10 @@ class BaseEvaluation:
                 questions_client = chromadb.PersistentClient(path=os.path.join(general_benchmark_path, 'questions_db'))
                 if embedding_function.__class__.__name__ == "OpenAIEmbeddingFunction":
                     try:
-                        if embedding_function._model_name == "text-embedding-3-large":
+                        model_name = getattr(embedding_function, '_model_name', '')
+                        if model_name == "text-embedding-3-large":
                             question_collection = questions_client.get_collection("auto_questions_openai_large", embedding_function=embedding_function)
-                        elif embedding_function._model_name == "text-embedding-3-small":
+                        elif model_name == "text-embedding-3-small":
                             question_collection = questions_client.get_collection("auto_questions_openai_small", embedding_function=embedding_function)
                     except Exception as e:
                         print("Warning: Failed to use the frozen embeddings originally used in the paper. As a result, this package will now generate a new set of embeddings. The change should be minimal and only come from the noise floor of OpenAI's embedding function. The error: ", e)
@@ -369,11 +372,10 @@ class BaseEvaluation:
                         print("Warning: Failed to use the frozen embeddings originally used in the paper. As a result, this package will now generate a new set of embeddings. The change should be minimal and only come from the noise floor of SentenceTransformer's embedding function. The error: ", e)
         
         if not self.is_general or question_collection is None:
-            # if self.is_general:
-            #     print("FAILED TO LOAD GENERAL EVALUATION")
             try:
                 self.chroma_client.delete_collection("auto_questions")
-            except ValueError as e:
+            except Exception:
+                # Collection might not exist, which is fine
                 pass
             question_collection = self.chroma_client.create_collection("auto_questions", embedding_function=embedding_function, metadata={"hnsw:search_ef":50})
             question_collection.add(
