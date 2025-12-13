@@ -12,12 +12,12 @@ from openai import OpenAI
 from importlib import resources
 
 class SyntheticEvaluation(BaseEvaluation):
-    def __init__(self, corpora_paths: List[str], queries_csv_path: str, chroma_db_path:str = None, openai_api_key=None):
+    def __init__(self, corpora_paths: List[str], queries_csv_path: str, chroma_db_path:str = None, openai_api_key=None, model="gpt-4-turbo"):
         super().__init__(questions_csv_path=queries_csv_path, chroma_db_path=chroma_db_path)
         self.corpora_paths = corpora_paths
         self.questions_csv_path = queries_csv_path
         self.client = OpenAI(api_key=openai_api_key)
-
+        self.model = model
         self.synth_questions_df = None
 
         with resources.as_file(resources.files('chunking_evaluation.evaluation_framework') / 'prompts') as prompt_path:
@@ -80,7 +80,7 @@ class SyntheticEvaluation(BaseEvaluation):
         tagged_text, tag_indexes = self._tag_text(document)
 
         completion = self.client.chat.completions.create(
-            model="gpt-4-turbo",
+            model=self.model,
             response_format={ "type": "json_object" },
             max_tokens=600,
             messages=[
